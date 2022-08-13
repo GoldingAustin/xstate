@@ -48,7 +48,7 @@ const toggleMachine = createMachine({
 });
 
 export const Toggler = () => {
-  const [state, send] = useMachine(toggleMachine);
+  const {state, send} = useMachine(toggleMachine);
 
   return (
     <button onclick={() => send('TOGGLE')}>
@@ -72,16 +72,15 @@ A SolidJS hook that interprets the given `machine` and starts a service that run
 
   ```js
   // existing machine
-  const [state, send] = useMachine(machine);
+  const {state, send} = useMachine(machine);
   ```
 
 - `options` (optional) - [Interpreter options](https://xstate.js.org/docs/guides/interpretation.html#options) and/or any of the following machine config options: `guards`, `actions`, `services`, `delays`, `immediate`, `context`, `state`.
 
-**Returns** a tuple of `[state, send, service]`:
+**Returns** an object matching an Interpreter or service of `{state, send, subscribe, ...other service objects}`:
 
 - `state` - Represents the current state of the machine as an XState `State` object. This is a read-only value that is tracked by SolidJS for granular reactivity.
 - `send` - A function that sends events to the running service.
-- `service` - The created service.
 
 ### `useActor(actor, getSnapshot?)`
 
@@ -94,63 +93,13 @@ A SolidJS hook that subscribes to emitted changes from an existing [actor](https
   - Defaults to attempting to get the `actor.state`, or returning `undefined` if that does not exist.
 
 ```js
-const [state, send] = useActor(someSpawnedActor);
+const {state, send} = useActor(someSpawnedActor);
 
 // with custom actors
-const [state, send] = useActor(customActor, (actor) => {
+const {state, send} = useActor(customActor, (actor) => {
   // implementation-specific pseudocode example:
   return actor.getLastEmittedValue();
 });
-```
-
-### `useInterpret(machine, options?, observer?)`
-
-A SolidJS hook that returns the `service` created from the `machine` with the `options`, if specified. It starts the service and runs it for the lifetime of the component. This is similar to `useMachine`; however, `useInterpret` allows for a custom `observer` to subscribe to the `service`.
-
-`useInterpret` returns a static reference (to just the interpreted machine) which will not rerender when its state changes.
-
-To use a piece of state from the service inside a render, use the `useSelector(...)` hook to subscribe to it.
-
-**Arguments**
-
-- `machine` - An [XState machine](https://xstate.js.org/docs/guides/machines.html) or a function that lazily returns a machine.
-- `options` (optional) - [Interpreter options](https://xstate.js.org/docs/guides/interpretation.html#options) and/or any of the following machine config options: `guards`, `actions`, `services`, `delays`, `immediate`, `context`, `state`.
-- `observer` (optional) - an observer or listener that listens to state updates:
-  - an observer (e.g., `{ next: (state) => {/* ... */} }`)
-  - or a listener (e.g., `(state) => {/* ... */}`)
-
-```js
-import { useInterpret } from '@xstate/solid';
-import { someMachine } from '../path/to/someMachine';
-
-const App = () => {
-  const service = useInterpret(someMachine);
-
-  // ...
-};
-```
-
-With options + listener:
-
-```js
-// ...
-
-const App = () => {
-  const service = useInterpret(
-    someMachine,
-    {
-      actions: {
-        /* ... */
-      }
-    },
-    (state) => {
-      // subscribes to state changes
-      console.log(state);
-    }
-  );
-
-  // ...
-};
 ```
 
 ### `useSelector(actor, selector, compare?, getSnapshot?)`
@@ -225,11 +174,10 @@ This special `useMachine` hook is imported from `@xstate/solid/fsm`
 - `machine` - An [XState finite state machine (FSM)](https://xstate.js.org/docs/packages/xstate-fsm/).
 - `options` - An optional `options` object.
 
-**Returns** a tuple of `[state, send, service]`:
+**Returns** an object matching an FSM Interpreter or service of `{state, send, ...other service objects}`:
 
 - `state` - Represents the current state of the machine as an `@xstate/fsm` `StateMachine.State` object. This is a read-only value that is tracked by SolidJS for granular reactivity.
 - `send` - A function that sends events to the running service.
-- `service` - The created `@xstate/fsm` service.
 
 **Example**
 
@@ -267,7 +215,7 @@ const fetchMachine = createMachine({
 const Fetcher = ({
   onFetch = () => new Promise((res) => res('some data'))
 }) => {
-  const [state, send] = useMachine(fetchMachine, {
+  const {state, send} = useMachine(fetchMachine, {
     actions: {
       load: () => {
         onFetch().then((res) => {
@@ -383,7 +331,7 @@ The SolidJS [Switch and Match Components]() are ideal for this use case:
 
 ```jsx
 const Loader = () => {
-  const [state, send] = useMachine(/* ... */);
+  const {state, send} = useMachine(/* ... */);
 
   return (
     <div>
@@ -414,7 +362,7 @@ You can persist and rehydrate state with `useMachine(...)` via `options.state`:
 const persistedState = JSON.parse(localStorage.getItem('some-persisted-state-key')) || someMachine.initialState;
 
 const App = () => {
-  const [state, send] = useMachine(someMachine, {
+  const {state, send} = useMachine(someMachine, {
     state: persistedState // provide persisted state config object here
   });
 
@@ -425,12 +373,11 @@ const App = () => {
 ```
 
 ## Services
-
-The `service` created in `useMachine(machine)` can be referenced as the third returned value:
+ `useMachine(machine)` returns the full service:
 
 ```js
-//                  vvvvvvv
-const [state, send, service] = useMachine(someMachine);
+//               
+const service = useMachine(someMachine);
 ```
 
 You can subscribe to that service's state changes with the [`createEffect` hook](https://www.solidjs.com/docs/latest/api#createeffect):

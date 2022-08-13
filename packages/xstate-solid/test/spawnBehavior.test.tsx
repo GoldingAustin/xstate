@@ -18,11 +18,11 @@ describe('useSpawn', () => {
 
     const Test = () => {
       const actorRef = spawnBehavior(behavior);
-      const [count, send] = useActor(() => actorRef);
+      const actor = useActor(actorRef);
 
       return (
-        <button data-testid="count" onclick={() => send({ type: 'INC' })}>
-          {count()}
+        <button data-testid="count" onclick={() => actor.send({ type: 'INC' })}>
+          {actor.state}
         </button>
       );
     };

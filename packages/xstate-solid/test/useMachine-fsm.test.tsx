@@ -48,7 +48,7 @@ describe('useMachine hook for fsm', () => {
   }: {
     onFetch: () => Promise<any>;
   }) => {
-    const [current, send] = useMachine(fetchMachine, {
+    const {state, send} = useMachine(fetchMachine, {
       actions: {
         load: () =>
           onFetch().then((res) => {
@@ -59,14 +59,14 @@ describe('useMachine hook for fsm', () => {
 
     return (
       <Switch fallback={null}>
-        <Match when={current.matches('idle')}>
+        <Match when={state.matches('idle')}>
           <button onclick={(_) => send('FETCH')}>Fetch</button>;
         </Match>
-        <Match when={current.matches('loading')}>
+        <Match when={state.matches('loading')}>
           <div>Loading...</div>
         </Match>
-        <Match when={current.matches('success')}>
-          Success! Data: <div data-testid="data">{current.context.data}</div>
+        <Match when={state.matches('success')}>
+          Success! Data: <div data-testid="data">{state.context.data}</div>
         </Match>
       </Switch>
     );
@@ -86,7 +86,7 @@ describe('useMachine hook for fsm', () => {
 
   it('should provide the service', () => {
     const Test = () => {
-      const [, , service] = useMachine(fetchMachine);
+      const service = useMachine(fetchMachine);
 
       expect(typeof service.send).toBe('function');
 
@@ -117,7 +117,7 @@ describe('useMachine hook for fsm', () => {
         done();
       };
 
-      const [, send] = useMachine(toggleMachine, {
+      const {send} = useMachine(toggleMachine, {
         actions: {
           doAction
         }
@@ -175,7 +175,7 @@ describe('useMachine hook for fsm', () => {
     );
 
     const Comp = () => {
-      const [, send] = useMachine(toggleMachine);
+      const {send} = useMachine(toggleMachine);
       onMount(() => {
         send('TOGGLE');
         expect(actual).toEqual(true);
@@ -313,7 +313,7 @@ describe('useMachine hook for fsm', () => {
 
     const App = () => {
       const [stateCount, setStateCount] = createSignal(0);
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       createEffect(
         on(
           () => state.context.item.count,
@@ -383,7 +383,7 @@ describe('useMachine hook for fsm', () => {
     const useCustomService = (service: Service) => createEffect(() => service);
 
     function App() {
-      const [, , service] = useMachine(machine);
+      const service = useMachine(machine);
 
       useCustomService(service);
 

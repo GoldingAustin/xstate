@@ -23,7 +23,7 @@ describe('useService hook for fsm', () => {
     const counterService = interpret(counterMachine()).start();
 
     const Counter = () => {
-      const [state] = useService(() => counterService);
+      const {state} = useService(() => counterService);
 
       return <div data-testid="count">{state.context.count}</div>;
     };
@@ -55,7 +55,7 @@ describe('useService hook for fsm', () => {
     const counterService2 = interpret(counterMachine()).start();
 
     const Counter = (props) => {
-      const [state, send] = useService(
+      const {state, send} = useService(
         props.counterRef
       );
 
@@ -97,17 +97,17 @@ describe('useService hook for fsm', () => {
     const CounterDisplay: Component<{
       service: StateMachine.Service<any, any>;
     }> = (props) => {
-      const [state] = useService(() => props.service);
+      const {state} = useService(() => props.service);
 
       return <div data-testid="count">{state.context.count}</div>;
     };
 
     const Counter = () => {
-      const [, send, service] = useMachine(counterMachine());
+      const service = useMachine(counterMachine());
 
       return (
         <div>
-          <button data-testid="inc" onclick={(_) => send('INC')} />
+          <button data-testid="inc" onclick={(_) => service.send('INC')} />
           <CounterDisplay service={service} />
         </div>
       );

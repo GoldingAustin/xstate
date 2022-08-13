@@ -12,6 +12,7 @@ import type { UseMachineOptions, Prop } from './types';
 import { createService } from './createService';
 import { batch, onCleanup, onMount } from 'solid-js';
 import { updateState } from './updateState';
+import { Interpreter } from 'xstate';
 
 type RestParams<
   TMachine extends AnyStateMachine
@@ -46,7 +47,7 @@ export type UseMachineReturn<
 export function useMachine<TMachine extends AnyStateMachine>(
   machine: TMachine,
   ...[options = {}]: RestParams<TMachine>
-): UseMachineReturn<TMachine> {
+): InterpreterFrom<TMachine> & InstanceType<typeof Interpreter> {
   const service = createService(machine, options);
 
   const [state, setState] = createStore<StateFrom<TMachine>>({
@@ -87,10 +88,12 @@ export function useMachine<TMachine extends AnyStateMachine>(
     onCleanup(unsubscribe);
   });
 
-  return [
-    // States are readonly by default, make downstream typing easier by casting away from DeepReadonly wrapper
-    (state as unknown) as StateFrom<TMachine>,
-    service.send,
-    service
-  ] as UseMachineReturn<TMachine>;
+  const newService = {...service, state };
+
+  // Apply interpreter prototype methods to newService, destructuring breaks methods - need to bind
+  for (const [name, method] of Object.entries(Interpreter.prototype)) {
+    newService[name] = method.bind(newService);
+  }
+
+  return newService;
 }

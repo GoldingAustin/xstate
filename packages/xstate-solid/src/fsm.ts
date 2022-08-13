@@ -33,14 +33,13 @@ const getServiceState = <
 export function useMachine<TMachine extends StateMachine.AnyMachine>(
   machine: TMachine,
   options?: MachineImplementationsFrom<TMachine>
-): [StateFrom<TMachine>, ServiceFrom<TMachine>['send'], ServiceFrom<TMachine>] {
+): ServiceFrom<TMachine> {
   const resolvedMachine = createMachine(
     machine.config,
     options ? options : (machine as any)._options
   );
 
   const service = interpret(resolvedMachine).start();
-  const send = (event: ServiceFrom<TMachine>['send']) => service.send(event);
 
   const [state, setState] = createStore<StateFrom<TMachine>>({
     ...service.state,
@@ -61,16 +60,14 @@ export function useMachine<TMachine extends StateMachine.AnyMachine>(
     onCleanup(service.stop);
   });
 
-  return [state, send, service] as any;
+  return {...service, state} as ServiceFrom<TMachine>;
 }
 
 export function useService<TService extends StateMachine.AnyService>(
   service: Accessor<TService>
-): [StateFrom<TService>, TService['send'], TService] {
+): TService {
   const serviceState = getServiceState(service());
   const [state, setState] = createStore(serviceState);
-
-  const send = (event: TService['send']) => service().send(event);
 
   createEffect(
     on(service, (_, prev) => {
@@ -88,7 +85,7 @@ export function useService<TService extends StateMachine.AnyService>(
     })
   );
 
-  return [state, send, service()] as any;
+  return {...service(), state} as TService;
 }
 
 function checkReusedService(serviceState: StateMachine.State<any, any, any>) {

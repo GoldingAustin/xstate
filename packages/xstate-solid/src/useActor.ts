@@ -1,7 +1,7 @@
 import type { ActorRef, EventObject, Sender } from 'xstate';
 import type { Accessor } from 'solid-js';
 import { createEffect, createMemo, on, onCleanup } from 'solid-js';
-import { createStoreSignal } from './createStoreSignal';
+import { createStore, reconcile } from 'solid-js/store';
 
 export function isActorWithState<T extends ActorRef<any>>(
   actorRef: T
@@ -27,15 +27,15 @@ export function defaultGetSnapshot<TEmitted>(
     : {};
 }
 
-type ActorReturn<T> = Accessor<T>;
+type ActorReturn<T> = T;
 export function useActor<TActor extends ActorRef<any, any>>(
   actorRef: Accessor<TActor> | TActor,
   getSnapshot?: (actor: TActor) => EmittedFromActorRef<TActor>
-): [ActorReturn<EmittedFromActorRef<TActor>>, TActor['send']];
+): {state: ActorReturn<EmittedFromActorRef<TActor>>, send: TActor['send']};
 export function useActor<TEvent extends EventObject, TEmitted>(
   actorRef: Accessor<ActorRef<TEvent, TEmitted>> | ActorRef<TEvent, TEmitted>,
   getSnapshot?: (actor: ActorRef<TEvent, TEmitted>) => TEmitted
-): [ActorReturn<TEmitted>, Sender<TEvent>];
+): {state: ActorReturn<TEmitted>, send: Sender<TEvent>};
 export function useActor(
   actorRef:
     | Accessor<ActorRef<EventObject, unknown>>
@@ -43,20 +43,26 @@ export function useActor(
   getSnapshot: (
     actor: ActorRef<EventObject, unknown>
   ) => unknown = defaultGetSnapshot
-): [ActorReturn<unknown>, Sender<EventObject>] {
+): {state: ActorReturn<unknown>, send: Sender<EventObject>} {
+
   const actorMemo = createMemo<ActorRef<EventObject, unknown>>(
     typeof actorRef === 'function' ? actorRef : () => actorRef
   );
 
-  const [snapshot, update] = createStoreSignal<unknown>(actorMemo, getSnapshot);
+  const [state, update] = createStore({
+    state: getSnapshot(actorMemo()),
+    get send() {
+      return actorMemo().send;
+    }
+  });
 
   createEffect(
     // Track and rerun if a new actor is provided
     on(actorMemo, () => {
-      update(getSnapshot(actorMemo()));
+      update('state', reconcile(getSnapshot(actorMemo()), {merge: true}));
       const { unsubscribe } = actorMemo().subscribe({
         next: (emitted: unknown) => {
-          update(emitted);
+          update('state', reconcile(emitted, {merge: true}));
         },
         error: noop,
         complete: noop
@@ -65,5 +71,5 @@ export function useActor(
     })
   );
 
-  return [snapshot, actorMemo().send];
+  return state;
 }

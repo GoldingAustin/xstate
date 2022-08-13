@@ -36,16 +36,16 @@ describe('useActor', () => {
     const ChildTest: Component<{ actor: ActorRefFrom<typeof childMachine> }> = (
       props
     ) => {
-      const [state] = useActor(props.actor);
+      const actor = useActor(props.actor);
 
-      expect(state().value).toEqual('active');
+      expect(actor.state.value).toEqual('active');
       done();
 
       return null;
     };
 
     const Test = () => {
-      const [state] = useMachine(machine);
+      const {state} = useMachine(machine);
       return (
         <ChildTest
           actor={state.children.child as ActorRefFrom<typeof childMachine>}
@@ -85,17 +85,17 @@ describe('useActor', () => {
     const ChildTest: Component<{ actor: ActorRefFrom<typeof childMachine> }> = (
       props
     ) => {
-      const [state, send] = useActor(props.actor);
+      const actor = useActor(props.actor);
 
-      expect(state().value).toEqual('active');
+      expect(actor.state.value).toEqual('active');
 
-      send({ type: 'FINISH' });
+      actor.send({ type: 'FINISH' });
 
       return null;
     };
 
     const Test = () => {
-      const [state] = useMachine(machine);
+      const {state} = useMachine(machine);
       createEffect(() => {
         if (state.matches('success')) {
           done();
@@ -168,12 +168,12 @@ describe('useActor', () => {
     const ChildTest = (props: {
       actor: Readonly<ActorRefFrom<typeof childMachine>>;
     }) => {
-      const [state, send] = useActor(props.actor);
+      const actor = useActor(props.actor);
       const [count, setCount] = createSignal(0);
       const [total, setTotal] = createSignal(0);
       createEffect(
         on(
-          () => state().context.item.count,
+          () => actor.state.context.item.count,
           () => {
             setCount(() => count() + 1);
           },
@@ -183,7 +183,7 @@ describe('useActor', () => {
 
       createEffect(
         on(
-          () => state().context.item.total,
+          () => actor.state.context.item.total,
           () => {
             setTotal(() => count() + 1);
           },
@@ -192,8 +192,8 @@ describe('useActor', () => {
       );
 
       onMount(() => {
-        send('COUNT');
-        send({ type: 'FINISH' });
+        actor.send('COUNT');
+        actor.send({ type: 'FINISH' });
       });
 
       return (
@@ -205,7 +205,7 @@ describe('useActor', () => {
     };
 
     const Test = () => {
-      const [state] = useMachine(machine);
+      const {state} = useMachine(machine);
 
       return <ChildTest actor={state.context.actorRef!} />;
     };
@@ -250,9 +250,9 @@ describe('useActor', () => {
     const ChildTest: Component<{ actor: ActorRefFrom<typeof childMachine> }> = (
       props
     ) => {
-      const [state] = useActor(props.actor);
+      const actor = useActor(props.actor);
 
-      expect(state().value).toEqual('active');
+      expect(actor.state.value).toEqual('active');
 
       done();
 
@@ -260,7 +260,7 @@ describe('useActor', () => {
     };
 
     const Test = () => {
-      const [state] = useMachine(machine);
+      const {state} = useMachine(machine);
       const { actorRef } = state.context;
 
       return <ChildTest actor={actorRef!} />;
@@ -300,20 +300,20 @@ describe('useActor', () => {
     });
 
     const ChildTest = (props: { actor: ActorRefFrom<typeof childMachine> }) => {
-      const [state, send] = useActor(props.actor);
+      const actor = useActor(props.actor);
       createEffect(() => {
-        expect(state().value).toEqual('active');
+        expect(actor.state.value).toEqual('active');
       });
 
       onMount(() => {
-        send({ type: 'FINISH' });
+        actor.send({ type: 'FINISH' });
       });
 
       return null;
     };
 
     const Test = () => {
-      const [state] = useMachine(machine);
+      const {state} = useMachine(machine);
       createEffect(() => {
         if (state.matches('success')) {
           done();
@@ -344,9 +344,9 @@ describe('useActor', () => {
     };
 
     const Test = () => {
-      const [state] = useActor(simpleActor, (a) => a.latestValue);
+      const actor = useActor(simpleActor, (a) => a.latestValue);
 
-      return <div data-testid="state">{state()}</div>;
+      return <div data-testid="state">{actor.state}</div>;
     };
 
     render(() => <Test />);
@@ -373,9 +373,9 @@ describe('useActor', () => {
     });
 
     const Test = () => {
-      const [state] = useActor(simpleActor);
+      const actor = useActor(simpleActor);
 
-      return <div data-testid="state">{state()}</div>;
+      return <div data-testid="state">{actor.state}</div>;
     };
 
     render(() => <Test />);
@@ -402,15 +402,15 @@ describe('useActor', () => {
       }) as ActorRef<any> & { latestValue: number };
 
     const Test = () => {
-      const [actor, setActor] = createSignal(createSimpleActor(42));
-      const [state] = useActor(actor, (a) => a.latestValue);
+      const [actorSignal, setActorSignal] = createSignal(createSimpleActor(42));
+      const actor = useActor(actorSignal, (a) => a.latestValue);
 
       return (
         <div>
-          <div data-testid="state">{state()}</div>
+          <div data-testid="state">{actor.state}</div>
           <button
             data-testid="button"
-            onclick={() => setActor(createSimpleActor(100))}
+            onclick={() => setActorSignal(createSimpleActor(100))}
           />
         </div>
       );
@@ -450,18 +450,18 @@ describe('useActor', () => {
     });
 
     const Test = () => {
-      const [actor, setActor] = createSignal(firstActor);
-      const [, send] = useActor(actor);
+      const [actorSignal, setActorSignal] = createSignal(firstActor);
+      const actor = useActor(actorSignal);
 
       onMount(() => {
         setTimeout(() => {
           // The `send` here is closed-in
-          send({ type: 'anything' });
+          actor.send({ type: 'anything' });
         }, 10);
       }); // Intentionally omit `send` from dependency array
 
       return (
-        <button data-testid="button" onclick={() => setActor(lastActor)} />
+        <button data-testid="button" onclick={() => setActorSignal(lastActor)} />
       );
     };
 
@@ -507,18 +507,18 @@ describe('useActor', () => {
     const counterService = interpret(counterMachine).start();
 
     const Counter = () => {
-      const [state, send] = useActor(counterService);
+      const actor = useActor(counterService);
 
       return (
         <div
           data-testid="count"
           onclick={() => {
-            send('INC');
+            actor.send('INC');
             // @ts-expect-error
-            send('FAKE');
+            actor.send('FAKE');
           }}
         >
-          {state().context.count}
+          {actor.state.context.count}
         </div>
       );
     };
@@ -572,13 +572,13 @@ describe('useActor', () => {
     });
 
     const App = () => {
-      const [state] = useMachine(machine);
-      const [childState, childSend] = useActor(state.context.ref);
+      const {state} = useMachine(machine);
+      const actor = useActor(state.context.ref);
 
       return (
         <div>
-          <div data-testid="child-state">{childState().value}</div>
-          <button data-testid="child-send" onclick={() => childSend('NEXT')} />
+          <div data-testid="child-state">{actor.state.value}</div>
+          <button data-testid="child-send" onclick={() => actor.send('NEXT')} />
         </div>
       );
     };

@@ -150,7 +150,7 @@ describe('useSelector', () => {
     const selector = (state) => state.context.count;
 
     const App = () => {
-      const [state] = useMachine(parentMachine);
+      const {state} = useMachine(parentMachine);
       const actor = state.context.childActor;
       const count = useSelector(actor, selector);
 
@@ -198,7 +198,7 @@ describe('useSelector', () => {
     const [prop, setProp] = createSignal('first');
 
     const App = () => {
-      const [state] = useMachine(parentMachine);
+      const {state} = useMachine(parentMachine);
       const actor = state.context.childActor;
       const value = useSelector(
         actor,
@@ -253,7 +253,7 @@ describe('useSelector', () => {
     });
 
     const App = () => {
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       const count = useSelector(
         () => state.context.actorRef,
         (actorState) => actorState.context.count
@@ -326,7 +326,7 @@ describe('useSelector', () => {
     const Child: Component<{ actorRef: ActorRefFrom<typeof childMachine> }> = (
       props
     ) => {
-      const [, send] = useActor(props.actorRef);
+      const actor = useActor(props.actorRef);
       const actorContext = useSelector(
         props.actorRef,
         (actorState) => actorState.context,
@@ -337,13 +337,13 @@ describe('useSelector', () => {
         <div>
           <div data-testid="count">{actorContext().items.count}</div>
           <div data-testid="wins">{actorContext().items.wins}</div>
-          <button data-testid="inc" onclick={() => send('INC')} />
-          <button data-testid="win" onclick={() => send('WIN')} />
+          <button data-testid="inc" onclick={() => actor.send('INC')} />
+          <button data-testid="win" onclick={() => actor.send('WIN')} />
         </div>
       );
     };
     const App = () => {
-      const [state] = useMachine(machine);
+      const { state } = useMachine(machine);
 
       return <Child actorRef={state.context.actorRef} />;
     };
@@ -390,7 +390,7 @@ describe('useSelector', () => {
     const [prop, setProp] = createSignal('first');
 
     const App = () => {
-      const [state] = useMachine(parentMachine);
+      const {state} = useMachine(parentMachine);
       const actor = state.context.childActor;
       const value = useSelector(
         actor,
@@ -434,7 +434,7 @@ describe('useSelector', () => {
       latestValue
     });
 
-    const parentMachine = createMachine({
+    const parentMachine = createMachine<{childActor: ReturnType<typeof createActor>}>({
       entry: assign({
         childActor: () => spawn(createActor('foo'))
       })
@@ -445,7 +445,7 @@ describe('useSelector', () => {
       actor.latestValue;
 
     const App = () => {
-      const [state] = useMachine(parentMachine);
+      const {state} = useMachine(parentMachine);
       const actor = state.context.childActor;
 
       const value = useSelector(

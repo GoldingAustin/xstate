@@ -80,7 +80,7 @@ describe('useMachine hook', () => {
       },
       props
     );
-    const [current, send] = useMachine(fetchMachine, {
+    const {state, send} = useMachine(fetchMachine, {
       services: {
         fetchData: mergedProps.onFetch
       },
@@ -89,14 +89,14 @@ describe('useMachine hook', () => {
 
     return (
       <Switch fallback={null}>
-        <Match when={current.matches('idle')}>
+        <Match when={state.matches('idle')}>
           <button onclick={(_) => send('FETCH')}>Fetch</button>;
         </Match>
-        <Match when={current.matches('loading')}>
+        <Match when={state.matches('loading')}>
           <div>Loading...</div>
         </Match>
-        <Match when={current.matches('success')}>
-          Success! Data: <div data-testid="data">{current.context.data}</div>
+        <Match when={state.matches('success')}>
+          Success! Data: <div data-testid="data">{state.context.data}</div>
         </Match>
       </Switch>
     );
@@ -143,27 +143,13 @@ describe('useMachine hook', () => {
     expect(dataEl.textContent).toBe('persisted data');
   });
 
-  it('should provide the service', () => {
-    const Test = () => {
-      const [, , service] = useMachine(fetchMachine);
-
-      if (!(service instanceof Interpreter)) {
-        throw new Error('service not instance of Interpreter');
-      }
-
-      return null;
-    };
-
-    render(() => <Test />);
-  });
-
   it('should provide options for the service', () => {
     const Test = () => {
-      const [, , service] = useMachine(fetchMachine, {
+      const {options} = useMachine(fetchMachine, {
         execute: false
       });
 
-      expect(service.options.execute).toBe(false);
+      expect(options.execute).toBe(false);
 
       return null;
     };
@@ -184,7 +170,7 @@ describe('useMachine hook', () => {
     });
 
     const Test = () => {
-      const [state] = useMachine(testMachine, { context: { test: true } });
+      const {state} = useMachine(testMachine, { context: { test: true } });
 
       expect(state.context).toEqual({
         foo: 'bar',
@@ -218,14 +204,14 @@ describe('useMachine hook', () => {
     });
 
     const Spawner = () => {
-      const [current] = useMachine(spawnMachine);
+      const {state} = useMachine(spawnMachine);
 
       return (
         <Switch fallback={null}>
-          <Match when={current.value === 'start'}>
+          <Match when={state.value === 'start'}>
             <span data-testid="start" />
           </Match>
-          <Match when={current.value === 'success'}>
+          <Match when={state.value === 'success'}>
             <span data-testid="success" />
           </Match>
         </Switch>
@@ -257,7 +243,7 @@ describe('useMachine hook', () => {
         done();
       };
 
-      const [, send] = useMachine(toggleMachine, {
+      const {send} = useMachine(toggleMachine, {
         actions: {
           doAction
         }
@@ -323,32 +309,31 @@ describe('useMachine hook', () => {
     const ServiceApp = (props: {
       service: Interpreter<TestContext, any, any, TestState>;
     }) => {
-      const [state] = useActor(() => props.service);
 
-      if (state().matches('loaded')) {
-        const name = state().context.user?.name;
+      if (props.service.state.matches('loaded')) {
+        const name = props.service.state.context.user?.name;
 
         // never called - it's okay if the name is undefined
         expect(name).toBeTruthy();
-      } else if (state().matches('loading')) {
+      } else if (props.service.state.matches('loading')) {
         // Make sure state isn't "never" - if it is, tests will fail to compile
-        expect(state).toBeTruthy();
+        expect(props.service.state).toBeTruthy();
       }
 
       return null;
     };
 
     const App = () => {
-      const [state, , service] = useMachine(machine);
+      const service = useMachine(machine);
 
-      if (state.matches('loaded')) {
-        const name = state.context.user.name;
+      if (service.state.matches('loaded')) {
+        const name = service.state.context.user.name;
 
         // never called - it's okay if the name is undefined
         expect(name).toBeTruthy();
-      } else if (state.matches('loading')) {
+      } else if (service.state.matches('loading')) {
         // Make sure state isn't "never" - if it is, tests will fail to compile
-        expect(state).toBeTruthy();
+        expect(service.state).toBeTruthy();
       }
 
       return <ServiceApp service={service} />;
@@ -378,7 +363,7 @@ describe('useMachine hook', () => {
 
     const App = () => {
       const [stateCount, setStateCount] = createSignal(0);
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       createEffect(
         on(
           () => state.event,
@@ -462,7 +447,7 @@ describe('useMachine hook', () => {
 
     const App = () => {
       const [stateCount, setStateCount] = createSignal(0);
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       createEffect(
         on(
           () => [...state.context.item.counts],
@@ -527,7 +512,7 @@ describe('useMachine hook', () => {
 
     const App = () => {
       const [stateCount, setStateCount] = createSignal(0);
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       createEffect(
         on(
           () => state.context.item.count,
@@ -605,7 +590,7 @@ describe('useMachine hook', () => {
     });
 
     const App = () => {
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       const [toStrings, setToStrings] = createSignal(state.toStrings());
       createEffect(
         on(
@@ -671,7 +656,7 @@ describe('useMachine hook', () => {
     });
 
     const App = () => {
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       const [toJson, setToJson] = createSignal(state.toJSON());
       createEffect(
         on(
@@ -740,7 +725,7 @@ describe('useMachine hook', () => {
     });
 
     const App = () => {
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       const [canGo, setCanGo] = createSignal(state.hasTag('go'));
       createEffect(() => {
         setCanGo(state.hasTag('go'));
@@ -801,7 +786,7 @@ describe('useMachine hook', () => {
     });
 
     const App = () => {
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       const [canToggle, setCanToggle] = createSignal(state.can('TOGGLE'));
       createEffect(() => {
         setCanToggle(state.can('TOGGLE'));
@@ -870,7 +855,7 @@ describe('useMachine hook', () => {
     );
 
     const App = () => {
-      const [, send] = useMachine(machine);
+      const {send} = useMachine(machine);
       send({ type: 'EV' });
       return null;
     };
@@ -909,7 +894,7 @@ describe('useMachine hook', () => {
     );
 
     const App = () => {
-      const [_state, send] = useMachine(machine);
+      const {send} = useMachine(machine);
       send({ type: 'EV' });
       return null;
     };
@@ -949,7 +934,7 @@ describe('useMachine hook', () => {
     );
 
     const App = () => {
-      const [, send] = useMachine(machine);
+      const {send} = useMachine(machine);
       send({ type: 'EV' });
       return null;
     };
@@ -989,7 +974,7 @@ describe('useMachine hook', () => {
     );
 
     const App = () => {
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       return (
         <div>
           <div data-testid="result">
@@ -1031,7 +1016,7 @@ describe('useMachine hook', () => {
     });
 
     const App = (props: { isAwesome: boolean }) => {
-      const [state, send] = useMachine(machine, {
+      const {state, send} = useMachine(machine, {
         guards: {
           isAwesome: () => props.isAwesome
         }
@@ -1079,7 +1064,7 @@ describe('useMachine hook', () => {
     });
 
     const App = () => {
-      const [state] = useMachine(m);
+      const {state} = useMachine(m);
       return <div data-testid="sync-count">{state.context.count}</div>;
     };
 
@@ -1104,7 +1089,7 @@ describe('useMachine hook', () => {
     });
     const [isAwesome, setIsAwesome] = createSignal(false);
     const App = () => {
-      const [state, send] = useMachine(machine, {
+      const {state, send} = useMachine(machine, {
         guards: {
           isAwesome: () => isAwesome()
         }
@@ -1175,7 +1160,7 @@ describe('useMachine (strict mode)', () => {
     };
 
     const Test = () => {
-      const [state, send] = useMachine(machine);
+      const {state, send} = useMachine(machine);
       createEffect(() => {
         if (state.matches('success')) {
           done();
@@ -1214,10 +1199,10 @@ describe('useMachine (strict mode)', () => {
     });
 
     const Test = () => {
-      const [state] = useMachine(machine);
-      const [childState] = useActor(() => state.children.test);
+      const {state} = useMachine(machine);
+      const actor = useActor(state.children.test);
 
-      expect(childState().context.value).toBe(42);
+      expect(actor.state.context.value).toBe(42);
 
       return null;
     };
@@ -1253,7 +1238,7 @@ describe('useMachine (strict mode)', () => {
       let currentState;
 
       const Test = () => {
-        const [state, send] = useMachine(testMachine, {
+        const {state, send} = useMachine(testMachine, {
           state: State.create(JSON.parse(persistedState))
         });
         createEffect(

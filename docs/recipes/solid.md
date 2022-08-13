@@ -14,11 +14,11 @@ import { useMachine } from '@xstate/solid';
 import { toggleMachine } from '../path/to/toggleMachine';
 
 function Toggle() {
-  const [current, send] = useMachine(toggleMachine);
+  const {state, send} = useMachine(toggleMachine);
 
   return (
     <button onClick={() => send('TOGGLE')}>
-      {current.matches('inactive') ? 'Off' : 'On'}
+      {state.matches('inactive') ? 'Off' : 'On'}
     </button>
   );
 }
@@ -46,7 +46,7 @@ export const GlobalStateProvider = (props) => {
 };
 ```
 
-> For Typescript, you can create the context as `createContext({ authService: {} as UseMachineReturn<typeof authMachine> });` to ensure strong typings.
+> For Typescript, you can create the context as `createContext({ authService: {} as InterpreterFrom<typeof authMachine> });` to ensure strong typings.
 
 ### Utilizing context
 
@@ -57,8 +57,8 @@ import { useContext } from 'solid-js';
 import { GlobalStateContext } from './globalState';
 
 export const SomeComponent = (props) => {
-  const {authService: [state]} = useContext(GlobalStateContext);
-  return <>{state.matches('loggedIn') ? 'Logged In' : 'Logged Out'}</>;
+  const {authService} = useContext(GlobalStateContext);
+  return <>{authService.state.matches('loggedIn') ? 'Logged In' : 'Logged Out'}</>;
 };
 ```
 
@@ -73,9 +73,9 @@ import { useContext } from 'solid-js';
 import { GlobalStateContext } from './globalState';
 
 export const SomeComponent = (props) => {
-  const {authService: [,send]} = useContext(GlobalStateContext);
+  const {authService} = useContext(GlobalStateContext);
   return (
-    <button onClick={() => send('LOG_OUT')}>
+    <button onClick={() => authService.send('LOG_OUT')}>
       Log Out
     </button>
   );
@@ -91,8 +91,8 @@ import { GlobalStateContext } from './globalState';
 import { useSelector } from '@xstate/solid';
 
 export const SomeComponent = (props) => {
-  const {authService: [state]} = useContext(GlobalStateContext);
-  const user = useSelector(state.context.someUserActor, actor => actor.context, (a) => a.username !== undefined);
+  const {authService} = useContext(GlobalStateContext);
+  const user = useSelector(authService.state.context.someUserActor, actor => actor.context, (a) => a.username !== undefined);
 
   return <>{user().username ? 'Logged In' : 'Logged Out'}</>;
 };
@@ -134,7 +134,7 @@ import { useNavigate } from 'solid-app-router';
 const Component = () => {
   const navigate = useNavigate();
 
-  const [state, send] = useMachine(machine, {
+  const {state, send} = useMachine(machine, {
     actions: {
       goToOtherPage: () => {
         navigate('/other-page');
@@ -162,7 +162,7 @@ import {useMachine} from '@xstate/solid';
 
 const Component = () => {
   const [result, { mutate, refetch }] = createResource(() => fetch('/api/user').then(r => r.json()));
-  const [state, send] = useMachine(machine);
+  const {state, send} = useMachine(machine);
 
   createEffect(() => {
     send({
