@@ -28,10 +28,10 @@ or
 
 By using the global variable `XStateSolidFSM`
 
-2. Import the `useMachine` hook:
+2. Import the `createService` hook:
 
 ```js
-import { useMachine } from '@xstate/solid';
+import { createService } from '@xstate/solid';
 import { createMachine } from 'xstate';
 
 const toggleMachine = createMachine({
@@ -48,7 +48,7 @@ const toggleMachine = createMachine({
 });
 
 export const Toggler = () => {
-  const {state, send} = useMachine(toggleMachine);
+  const {state, send} = createService(toggleMachine);
 
   return (
     <button onclick={() => send('TOGGLE')}>
@@ -62,7 +62,7 @@ export const Toggler = () => {
 
 ## API
 
-### `useMachine(machine, options?)`
+### `createService(machine, options?)`
 
 A SolidJS hook that interprets the given `machine` and starts a service that runs for the lifetime of the component.
 
@@ -72,7 +72,7 @@ A SolidJS hook that interprets the given `machine` and starts a service that run
 
   ```js
   // existing machine
-  const {state, send} = useMachine(machine);
+  const {state, send} = createService(machine);
   ```
 
 - `options` (optional) - [Interpreter options](https://xstate.js.org/docs/guides/interpretation.html#options) and/or any of the following machine config options: `guards`, `actions`, `services`, `delays`, `immediate`, `context`, `state`.
@@ -147,27 +147,11 @@ const App = (props) => {
 };
 ```
 
-With `useInterpret(...)`:
-
-```js
-import { useInterpret, useSelector } from '@xstate/solid';
-import { someMachine } from '../path/to/someMachine';
-
-const selectCount = (state) => state.context.count;
-
-const App = (props) => {
-  const service = useInterpret(someMachine);
-  const count = useSelector(service, selectCount);
-
-  // ...
-};
-```
-
-### `useMachine(machine)` with `@xstate/fsm`
+### `createService(machine)` with `@xstate/fsm`
 
 A SolidJS hook that interprets the given finite state `machine` from [`@xstate/fsm`] and starts a service that runs for the lifetime of the component.
 
-This special `useMachine` hook is imported from `@xstate/solid/fsm`
+This special `createService` hook is imported from `@xstate/solid/fsm`
 
 **Arguments**
 
@@ -183,7 +167,7 @@ This special `useMachine` hook is imported from `@xstate/solid/fsm`
 
 ```js
 import { useEffect } from 'solid-js';
-import { useMachine } from '@xstate/solid/fsm';
+import { createService } from '@xstate/solid/fsm';
 import { createMachine } from '@xstate/fsm';
 
 const context = {
@@ -215,7 +199,7 @@ const fetchMachine = createMachine({
 const Fetcher = ({
   onFetch = () => new Promise((res) => res('some data'))
 }) => {
-  const {state, send} = useMachine(fetchMachine, {
+  const {state, send} = createService(fetchMachine, {
     actions: {
       load: () => {
         onFetch().then((res) => {
@@ -243,7 +227,7 @@ const Fetcher = ({
 
 ## Configuring Machines
 
-Existing machines can be configured by passing the machine options as the 2nd argument of `useMachine(machine, options)`.
+Existing machines can be configured by passing the machine options as the 2nd argument of `createService(machine, options)`.
 
 Example: the `'fetchData'` service and `'notifySuccess'` action are both configurable:
 
@@ -289,7 +273,7 @@ const fetchMachine = createMachine({
 });
 
 const Fetcher = ({ onResolve }) => {
-  const [state, send] = useMachine(fetchMachine, {
+  const [state, send] = createService(fetchMachine, {
     actions: {
       notifySuccess: (ctx) => onResolve(ctx.data)
     },
@@ -331,7 +315,7 @@ The SolidJS [Switch and Match Components]() are ideal for this use case:
 
 ```jsx
 const Loader = () => {
-  const {state, send} = useMachine(/* ... */);
+  const {state, send} = createService(/* ... */);
 
   return (
     <div>
@@ -353,7 +337,7 @@ const Loader = () => {
 
 ## Persisted and Rehydrated State
 
-You can persist and rehydrate state with `useMachine(...)` via `options.state`:
+You can persist and rehydrate state with `createService(...)` via `options.state`:
 
 ```js
 // ...
@@ -362,7 +346,7 @@ You can persist and rehydrate state with `useMachine(...)` via `options.state`:
 const persistedState = JSON.parse(localStorage.getItem('some-persisted-state-key')) || someMachine.initialState;
 
 const App = () => {
-  const {state, send} = useMachine(someMachine, {
+  const {state, send} = createService(someMachine, {
     state: persistedState // provide persisted state config object here
   });
 
@@ -373,11 +357,11 @@ const App = () => {
 ```
 
 ## Services
- `useMachine(machine)` returns the full service:
+ `createService(machine)` returns the full service:
 
 ```js
 //               
-const service = useMachine(someMachine);
+const service = createService(someMachine);
 ```
 
 You can subscribe to that service's state changes with the [`createEffect` hook](https://www.solidjs.com/docs/latest/api#createeffect):

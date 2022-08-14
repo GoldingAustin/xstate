@@ -11,8 +11,7 @@ import { interpret, createMachine } from '@xstate/fsm';
 import { createStore, reconcile } from 'solid-js/store';
 import type { Accessor } from 'solid-js';
 
-import { $PROXY, batch, createEffect, on, onCleanup, onMount } from 'solid-js';
-import { updateState } from './updateState';
+import { $PROXY, createEffect, createMemo, on, onCleanup, onMount } from 'solid-js';
 
 const getServiceState = <
   TContext extends object,
@@ -30,7 +29,7 @@ const getServiceState = <
   return currentValue!;
 };
 
-export function useMachine<TMachine extends StateMachine.AnyMachine>(
+export function createService<TMachine extends StateMachine.AnyMachine>(
   machine: TMachine,
   options?: MachineImplementationsFrom<TMachine>
 ): ServiceFrom<TMachine> {
@@ -45,47 +44,45 @@ export function useMachine<TMachine extends StateMachine.AnyMachine>(
     ...service.state,
     matches(...args: Parameters<StateFrom<TMachine>['matches']>) {
       // tslint:disable-next-line:no-unused-expression
-      (state as StateFrom<StateMachine.AnyMachine>).value; // sets state.value to be tracked by the store
+      (state as unknown as StateFrom<StateMachine.AnyMachine>).value; // sets state.value to be tracked by the store
       return service.state.matches(args[0] as never);
     }
   } as StateFrom<TMachine>);
 
   onMount(() => {
     service.subscribe((nextState) => {
-      batch(() => {
-        updateState(nextState as StateFrom<TMachine>, setState);
-      });
+        setState(reconcile(nextState as StateFrom<TMachine>));
     });
 
     onCleanup(service.stop);
   });
 
-  return {...service, state} as ServiceFrom<TMachine>;
+  return { ...service, state } as ServiceFrom<TMachine>;
 }
 
 export function useService<TService extends StateMachine.AnyService>(
-  service: Accessor<TService>
+  service: TService | Accessor<TService>
 ): TService {
-  const serviceState = getServiceState(service());
+
+  const serviceMemo = createMemo(() => typeof service === 'function' ? service() : service);
+  const serviceState = serviceMemo().state;
   const [state, setState] = createStore(serviceState);
 
   createEffect(
-    on(service, (_, prev) => {
+    on(serviceMemo, (_, prev) => {
       if (prev) {
-        checkReusedService(getServiceState(service()));
+        checkReusedService(getServiceState(serviceMemo()));
       }
-      const { unsubscribe } = service().subscribe((nextState) => {
+      const { unsubscribe } = serviceMemo().subscribe((nextState) => {
         setState(
-          reconcile<typeof nextState, typeof nextState>(nextState, {
-            merge: false
-          })
+          reconcile<typeof nextState, typeof nextState>(nextState)
         );
       });
       onCleanup(unsubscribe);
     })
   );
 
-  return {...service(), state} as TService;
+  return { ...serviceMemo(), state } as TService;
 }
 
 function checkReusedService(serviceState: StateMachine.State<any, any, any>) {

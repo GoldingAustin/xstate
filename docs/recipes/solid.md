@@ -10,11 +10,11 @@ XState can be used with SolidJS to:
 ## Local state
 
 ```js
-import { useMachine } from '@xstate/solid';
+import { createService } from '@xstate/solid';
 import { toggleMachine } from '../path/to/toggleMachine';
 
 function Toggle() {
-  const {state, send} = useMachine(toggleMachine);
+  const {state, send} = createService(toggleMachine);
 
   return (
     <button onClick={() => send('TOGGLE')}>
@@ -30,13 +30,13 @@ function Toggle() {
 You can store a machine or service in [SolidJS context](https://www.solidjs.com/docs/latest/api#createcontext) to make them available throughout the component tree. Because @xstate/solid produces machines, actors, and services with SolidJS' fine-grained reactivity, you can access machine context and methods (e.g. `matches` or `can`) without worrying about wasted re-renders
 ```js
 import { createContext } from 'solid-js';
-import { useMachine } from '@xstate/solid';
+import { createService } from '@xstate/solid';
 import { authMachine } from './auth.machine';
 
 export const GlobalStateContext = createContext({});
 
 export const GlobalStateProvider = (props) => {
-  const authService = useMachine(authMachine);
+  const authService = createService(authMachine);
 
   return (
     <GlobalStateContext.Provider value={{ authService }}>
@@ -98,10 +98,6 @@ export const SomeComponent = (props) => {
 };
 ```
 
-## Other hooks
-
-`@xstate/solid` `useMachine` and `useInterpret` hooks can be used alongside others. Two patterns are most common:
-
 ### Named actions/services/guards
 
 Let's imagine that when you navigate to a certain state, you want to leave the page and go somewhere else, via `solid-app-router`. For now, we'll declare that action as a 'named' action - where we name it now and declare it later.
@@ -128,13 +124,13 @@ Inside your component, you can now _implement_ the named action. I've added `use
 
 ```js
 import { machine } from './machine';
-import { useMachine } from '@xstate/solid';
+import { createService } from '@xstate/solid';
 import { useNavigate } from 'solid-app-router';
 
 const Component = () => {
   const navigate = useNavigate();
 
-  const {state, send} = useMachine(machine, {
+  const {state, send} = createService(machine, {
     actions: {
       goToOtherPage: () => {
         navigate('/other-page');
@@ -158,11 +154,11 @@ The best way to manage this is via `createEffect`.
 
 ```js
 import {createResource, createEffect} from 'solid-js';
-import {useMachine} from '@xstate/solid';
+import {createService} from '@xstate/solid';
 
 const Component = () => {
   const [result, { mutate, refetch }] = createResource(() => fetch('/api/user').then(r => r.json()));
-  const {state, send} = useMachine(machine);
+  const {state, send} = createService(machine);
 
   createEffect(() => {
     send({

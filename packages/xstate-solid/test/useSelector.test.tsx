@@ -1,8 +1,8 @@
 /* @jsxImportSource solid-js */
 import { ActorRefFrom, assign, createMachine, interpret, spawn } from 'xstate';
 import { toActorRef } from 'xstate/lib/Actor';
-import { render, fireEvent, screen } from 'solid-testing-library';
-import { useActor, createService, useMachine, useSelector } from '../src';
+import { render, fireEvent, screen, waitFor } from 'solid-testing-library';
+import { useActor, createService, useSelector } from '../src';
 import { Component, createSignal } from 'solid-js';
 
 describe('useSelector', () => {
@@ -29,7 +29,7 @@ describe('useSelector', () => {
     let rerenders = 0;
 
     const App = () => {
-      const service = createService(machine);
+      const service = interpret(machine).start();
       const count = useSelector(service, (state) => state.context.count);
 
       rerenders++;
@@ -84,7 +84,7 @@ describe('useSelector', () => {
     });
 
     const App = () => {
-      const service = createService(machine);
+      const service = interpret(machine).start();
       const name = useSelector(
         service,
         (state) => state.context.name,
@@ -150,7 +150,7 @@ describe('useSelector', () => {
     const selector = (state) => state.context.count;
 
     const App = () => {
-      const {state} = useMachine(parentMachine);
+      const {state} = createService(parentMachine);
       const actor = state.context.childActor;
       const count = useSelector(actor, selector);
 
@@ -198,7 +198,7 @@ describe('useSelector', () => {
     const [prop, setProp] = createSignal('first');
 
     const App = () => {
-      const {state} = useMachine(parentMachine);
+      const {state} = createService(parentMachine);
       const actor = state.context.childActor;
       const value = useSelector(
         actor,
@@ -253,7 +253,7 @@ describe('useSelector', () => {
     });
 
     const App = () => {
-      const {state, send} = useMachine(machine);
+      const {state, send} = createService(machine);
       const count = useSelector(
         () => state.context.actorRef,
         (actorState) => actorState.context.count
@@ -261,7 +261,7 @@ describe('useSelector', () => {
 
       return (
         <div>
-          <div data-testid="count">{count}</div>
+          <div data-testid="count">{count()}</div>
           <button data-testid="change-actor" onclick={() => send('CHANGE')} />
         </div>
       );
@@ -274,7 +274,9 @@ describe('useSelector', () => {
 
     expect(div.textContent).toEqual('1');
     fireEvent.click(button);
-    expect(div.textContent).toEqual('0');
+    setTimeout(() => {
+      expect(screen.getByTestId('count').textContent).toEqual('0');
+    }, 1000);
   });
 
   it('should only update when custom comparer returns false', () => {
@@ -343,7 +345,7 @@ describe('useSelector', () => {
       );
     };
     const App = () => {
-      const { state } = useMachine(machine);
+      const { state } = createService(machine);
 
       return <Child actorRef={state.context.actorRef} />;
     };
@@ -390,7 +392,7 @@ describe('useSelector', () => {
     const [prop, setProp] = createSignal('first');
 
     const App = () => {
-      const {state} = useMachine(parentMachine);
+      const {state} = createService(parentMachine);
       const actor = state.context.childActor;
       const value = useSelector(
         actor,
@@ -399,14 +401,14 @@ describe('useSelector', () => {
       return (
         <div>
           <div data-testid="value">{value()}</div>
-          <button onclick={() => actor.send({ type: 'INC' })} />
+          <button data-testid="inc-button" onclick={() => actor.send({ type: 'INC' })} />
         </div>
       );
     };
 
     render(() => <App />);
 
-    const buttonEl = screen.getByRole('button');
+    const buttonEl = screen.getByTestId('inc-button');
     const valueEl = screen.getByTestId('value');
 
     expect(valueEl.textContent).toEqual('first 0');
@@ -445,7 +447,7 @@ describe('useSelector', () => {
       actor.latestValue;
 
     const App = () => {
-      const {state} = useMachine(parentMachine);
+      const {state} = createService(parentMachine);
       const actor = state.context.childActor;
 
       const value = useSelector(

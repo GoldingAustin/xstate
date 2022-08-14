@@ -1,5 +1,5 @@
 /* @jsxImportSource solid-js */
-import { useMachine, useActor } from '../src';
+import { createService, useActor } from '../src';
 import {
   createMachine,
   sendParent,
@@ -45,7 +45,7 @@ describe('useActor', () => {
     };
 
     const Test = () => {
-      const {state} = useMachine(machine);
+      const {state} = createService(machine);
       return (
         <ChildTest
           actor={state.children.child as ActorRefFrom<typeof childMachine>}
@@ -95,7 +95,7 @@ describe('useActor', () => {
     };
 
     const Test = () => {
-      const {state} = useMachine(machine);
+      const {state} = createService(machine);
       createEffect(() => {
         if (state.matches('success')) {
           done();
@@ -205,7 +205,7 @@ describe('useActor', () => {
     };
 
     const Test = () => {
-      const {state} = useMachine(machine);
+      const {state} = createService(machine);
 
       return <ChildTest actor={state.context.actorRef!} />;
     };
@@ -260,7 +260,7 @@ describe('useActor', () => {
     };
 
     const Test = () => {
-      const {state} = useMachine(machine);
+      const {state} = createService(machine);
       const { actorRef } = state.context;
 
       return <ChildTest actor={actorRef!} />;
@@ -313,7 +313,7 @@ describe('useActor', () => {
     };
 
     const Test = () => {
-      const {state} = useMachine(machine);
+      const {state} = createService(machine);
       createEffect(() => {
         if (state.matches('success')) {
           done();
@@ -572,7 +572,7 @@ describe('useActor', () => {
     });
 
     const App = () => {
-      const {state} = useMachine(machine);
+      const {state} = createService(machine);
       const actor = useActor(state.context.ref);
 
       return (
