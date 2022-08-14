@@ -4,22 +4,6 @@ import type { Accessor } from 'solid-js';
 import { createEffect, createMemo, on, onCleanup } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
 
-const isSnapshotSymbol: unique symbol = Symbol('is-xstate-solid-snapshot');
-const snapshotKey = '_snapshot';
-/**
- * Returns an object that can be used in a store
- * Handles primitives or objects.
- */
-const setSnapshotValue = <Value extends object | unknown>(value: Value): object => {
-  // If primitive, store in a unique object or return the value if an object
-  return (typeof value === 'object' && value
-    ? value
-    : { [snapshotKey]: value, [isSnapshotSymbol]: true }) as object;
-};
-
-const getSnapshotValue = <ReturnValue>(state): ReturnValue =>
-  snapshotKey in state && state[isSnapshotSymbol] ? state[snapshotKey] : state;
-
 const defaultCompare = (a, b) => a === b;
 
 export function useSelector<
@@ -38,12 +22,14 @@ export function useSelector<
 
   const getActorSnapshot = (act: TActor): T => selector(getSnapshot(act));
 
-  const [state, setState] = createStore(setSnapshotValue(getActorSnapshot(actorMemo())));
+  const [state, setState] = createStore({
+    snapshot: getActorSnapshot(actorMemo())
+  });
 
   const guardedUpdate = (emitted: TEmitted) => {
     const next = selector(emitted);
-    if (!compare(getSnapshotValue(state), next)) {
-      setState(reconcile(setSnapshotValue(next)));
+    if (!compare(state.snapshot, next)) {
+      setState('snapshot', reconcile(next));
     }
   };
 
@@ -62,5 +48,5 @@ export function useSelector<
     )
   );
 
-  return createMemo<T>(() => getSnapshotValue(state));
+  return createMemo(() => state.snapshot);
 }

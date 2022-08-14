@@ -13,66 +13,66 @@ import { interpret, Interpreter, Observer, State, toObserver } from 'xstate';
 
 type RestParams<
   TMachine extends AnyStateMachine
-  > = AreAllImplementationsAssumedToBeProvided<
+> = AreAllImplementationsAssumedToBeProvided<
   TMachine['__TResolvedTypesMeta']
-  > extends false
+> extends false
   ? [
-    options: InterpreterOptions &
-      UseMachineOptions<TMachine['__TContext'], TMachine['__TEvent']> &
-      InternalMachineOptions<
-        TMachine['__TContext'],
-        TMachine['__TEvent'],
-        TMachine['__TResolvedTypesMeta'],
-        true
+      options: InterpreterOptions &
+        UseMachineOptions<TMachine['__TContext'], TMachine['__TEvent']> &
+        InternalMachineOptions<
+          TMachine['__TContext'],
+          TMachine['__TEvent'],
+          TMachine['__TResolvedTypesMeta'],
+          true
         >,
-    observerOrListener?:
-      | Observer<
-      State<
-        TMachine['__TContext'],
-        TMachine['__TEvent'],
-        any,
-        TMachine['__TTypestate'],
-        TMachine['__TResolvedTypesMeta']
-        >
-      >
-      | ((
-      value: State<
-        TMachine['__TContext'],
-        TMachine['__TEvent'],
-        any,
-        TMachine['__TTypestate'],
-        TMachine['__TResolvedTypesMeta']
-        >
-    ) => void)
-  ]
+      observerOrListener?:
+        | Observer<
+            State<
+              TMachine['__TContext'],
+              TMachine['__TEvent'],
+              any,
+              TMachine['__TTypestate'],
+              TMachine['__TResolvedTypesMeta']
+            >
+          >
+        | ((
+            value: State<
+              TMachine['__TContext'],
+              TMachine['__TEvent'],
+              any,
+              TMachine['__TTypestate'],
+              TMachine['__TResolvedTypesMeta']
+            >
+          ) => void)
+    ]
   : [
-    options?: InterpreterOptions &
-      UseMachineOptions<TMachine['__TContext'], TMachine['__TEvent']> &
-      InternalMachineOptions<
-        TMachine['__TContext'],
-        TMachine['__TEvent'],
-        TMachine['__TResolvedTypesMeta']
+      options?: InterpreterOptions &
+        UseMachineOptions<TMachine['__TContext'], TMachine['__TEvent']> &
+        InternalMachineOptions<
+          TMachine['__TContext'],
+          TMachine['__TEvent'],
+          TMachine['__TResolvedTypesMeta']
         >,
-    observerOrListener?:
-      | Observer<
-      State<
-        TMachine['__TContext'],
-        TMachine['__TEvent'],
-        any,
-        TMachine['__TTypestate'],
-        TMachine['__TResolvedTypesMeta']
-        >
-      >
-      | ((
-      value: State<
-        TMachine['__TContext'],
-        TMachine['__TEvent'],
-        any,
-        TMachine['__TTypestate'],
-        TMachine['__TResolvedTypesMeta']
-        >
-    ) => void)
-  ];
+      observerOrListener?:
+        | Observer<
+            State<
+              TMachine['__TContext'],
+              TMachine['__TEvent'],
+              any,
+              TMachine['__TTypestate'],
+              TMachine['__TResolvedTypesMeta']
+            >
+          >
+        | ((
+            value: State<
+              TMachine['__TContext'],
+              TMachine['__TEvent'],
+              any,
+              TMachine['__TTypestate'],
+              TMachine['__TResolvedTypesMeta']
+            >
+          ) => void)
+    ];
 
 export function createService<TMachine extends AnyStateMachine>(
   machine: TMachine,
@@ -147,13 +147,16 @@ export function createService<TMachine extends AnyStateMachine>(
 
   onMount(() => {
     const { unsubscribe } = service.subscribe((nextState) => {
-        setState(reconcile(nextState as StateFrom<TMachine>));
+      setState(reconcile(nextState as StateFrom<TMachine>));
     });
 
     onCleanup(unsubscribe);
   });
 
-  const newService = { ...service, state } as unknown as InterpreterFrom<TMachine>;
+  const newService = ({
+    ...service,
+    state
+  } as unknown) as InterpreterFrom<TMachine>;
 
   // Apply interpreter prototype methods to newService, destructuring breaks methods - need to bind
   for (const [name, method] of Object.entries(Interpreter.prototype)) {

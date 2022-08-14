@@ -141,7 +141,7 @@ describe('useSelector', () => {
       }
     });
 
-    const parentMachine = createMachine({
+    const parentMachine = createMachine<{childActor: ActorRefFrom<typeof childMachine>}>({
       entry: assign({
         childActor: () => spawn(childMachine)
       })
@@ -190,7 +190,7 @@ describe('useSelector', () => {
       }
     });
 
-    const parentMachine = createMachine({
+    const parentMachine = createMachine<{childActor: ActorRefFrom<typeof childMachine>}>({
       entry: assign({
         childActor: () => spawn(childMachine)
       })
@@ -384,7 +384,7 @@ describe('useSelector', () => {
       }
     });
 
-    const parentMachine = createMachine({
+    const parentMachine = createMachine<{childActor: ActorRefFrom<typeof childMachine>}>({
       entry: assign({
         childActor: () => spawn(childMachine)
       })

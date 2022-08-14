@@ -11,7 +11,14 @@ import { interpret, createMachine } from '@xstate/fsm';
 import { createStore, reconcile } from 'solid-js/store';
 import type { Accessor } from 'solid-js';
 
-import { $PROXY, createEffect, createMemo, on, onCleanup, onMount } from 'solid-js';
+import {
+  $PROXY,
+  createEffect,
+  createMemo,
+  on,
+  onCleanup,
+  onMount
+} from 'solid-js';
 
 const getServiceState = <
   TContext extends object,
@@ -44,14 +51,14 @@ export function createService<TMachine extends StateMachine.AnyMachine>(
     ...service.state,
     matches(...args: Parameters<StateFrom<TMachine>['matches']>) {
       // tslint:disable-next-line:no-unused-expression
-      (state as unknown as StateFrom<StateMachine.AnyMachine>).value; // sets state.value to be tracked by the store
+      ((state as unknown) as StateFrom<StateMachine.AnyMachine>).value; // sets state.value to be tracked by the store
       return service.state.matches(args[0] as never);
     }
   } as StateFrom<TMachine>);
 
   onMount(() => {
     service.subscribe((nextState) => {
-        setState(reconcile(nextState as StateFrom<TMachine>));
+      setState(reconcile(nextState as StateFrom<TMachine>));
     });
 
     onCleanup(service.stop);
@@ -63,8 +70,9 @@ export function createService<TMachine extends StateMachine.AnyMachine>(
 export function useService<TService extends StateMachine.AnyService>(
   service: TService | Accessor<TService>
 ): TService {
-
-  const serviceMemo = createMemo(() => typeof service === 'function' ? service() : service);
+  const serviceMemo = createMemo(() =>
+    typeof service === 'function' ? service() : service
+  );
   const serviceState = serviceMemo().state;
   const [state, setState] = createStore(serviceState);
 
@@ -74,9 +82,7 @@ export function useService<TService extends StateMachine.AnyService>(
         checkReusedService(getServiceState(serviceMemo()));
       }
       const { unsubscribe } = serviceMemo().subscribe((nextState) => {
-        setState(
-          reconcile<typeof nextState, typeof nextState>(nextState)
-        );
+        setState(reconcile<typeof nextState, typeof nextState>(nextState));
       });
       onCleanup(unsubscribe);
     })
