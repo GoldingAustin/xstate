@@ -16,7 +16,7 @@ import {
   on
 } from 'solid-js';
 
-describe('useMachine hook for fsm', () => {
+describe('createService hook for fsm', () => {
   const context = {
     data: undefined
   };

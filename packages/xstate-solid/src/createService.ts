@@ -9,7 +9,7 @@ import type {
 import { createStore, reconcile } from 'solid-js/store';
 import type { UseMachineOptions } from './types';
 import { onCleanup, onMount } from 'solid-js';
-import { interpret, Interpreter, Observer, State, toObserver } from 'xstate';
+import { interpret, Interpreter, State } from 'xstate';
 
 type RestParams<
   TMachine extends AnyStateMachine
@@ -24,26 +24,7 @@ type RestParams<
           TMachine['__TEvent'],
           TMachine['__TResolvedTypesMeta'],
           true
-        >,
-      observerOrListener?:
-        | Observer<
-            State<
-              TMachine['__TContext'],
-              TMachine['__TEvent'],
-              any,
-              TMachine['__TTypestate'],
-              TMachine['__TResolvedTypesMeta']
-            >
-          >
-        | ((
-            value: State<
-              TMachine['__TContext'],
-              TMachine['__TEvent'],
-              any,
-              TMachine['__TTypestate'],
-              TMachine['__TResolvedTypesMeta']
-            >
-          ) => void)
+        >
     ]
   : [
       options?: InterpreterOptions &
@@ -52,31 +33,12 @@ type RestParams<
           TMachine['__TContext'],
           TMachine['__TEvent'],
           TMachine['__TResolvedTypesMeta']
-        >,
-      observerOrListener?:
-        | Observer<
-            State<
-              TMachine['__TContext'],
-              TMachine['__TEvent'],
-              any,
-              TMachine['__TTypestate'],
-              TMachine['__TResolvedTypesMeta']
-            >
-          >
-        | ((
-            value: State<
-              TMachine['__TContext'],
-              TMachine['__TEvent'],
-              any,
-              TMachine['__TTypestate'],
-              TMachine['__TResolvedTypesMeta']
-            >
-          ) => void)
+        >
     ];
 
 export function createService<TMachine extends AnyStateMachine>(
   machine: TMachine,
-  ...[options = {}, observerOrListener]: RestParams<TMachine>
+  ...[options = {}]: RestParams<TMachine>
 ): InterpreterFrom<TMachine> & InstanceType<typeof Interpreter> {
   const {
     context,
@@ -106,19 +68,6 @@ export function createService<TMachine extends AnyStateMachine>(
   const service = interpret(machineWithConfig, interpreterOptions).start(
     rehydratedState ? (State.create(rehydratedState) as any) : undefined
   );
-
-  onMount(() => {
-    let sub;
-
-    if (observerOrListener) {
-      sub = service.subscribe(toObserver(observerOrListener));
-    }
-
-    onCleanup(() => {
-      service.stop();
-      sub?.unsubscribe();
-    });
-  });
 
   const [state, setState] = createStore<StateFrom<TMachine>>({
     ...service.state,
