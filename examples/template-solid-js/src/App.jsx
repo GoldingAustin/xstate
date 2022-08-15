@@ -1,12 +1,12 @@
 import './App.css';
-import { useMachine } from '@xstate/solid';
+import { createService } from '@xstate/solid';
 import { toggleMachine } from './toggle.machine';
 
 function App() {
-  const [state, send] = useMachine(toggleMachine);
+  const {state, send} = createService(toggleMachine);
 
   return (
-    <div className="app">
+    <div class="app">
       <h1>XState SolidJS Template</h1>
       <h2>Fork this template!</h2>
       <button onClick={() => send('TOGGLE')}>

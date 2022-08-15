@@ -1,5 +1,5 @@
 /* @jsxImportSource solid-js */
-import { ActorRefFrom, assign, createMachine, interpret, spawn } from 'xstate';
+import { ActorRef, ActorRefFrom, assign, createMachine, interpret, spawn } from 'xstate';
 import { toActorRef } from 'xstate/lib/Actor';
 import { render, fireEvent, screen, waitFor } from 'solid-testing-library';
 import { useActor, createService, useSelector } from '../src';
@@ -436,7 +436,7 @@ describe('useSelector', () => {
       latestValue
     });
 
-    const parentMachine = createMachine<{childActor: ReturnType<typeof createActor>}>({
+    const parentMachine = createMachine<{childActor: ActorRef<any>}>({
       entry: assign({
         childActor: () => spawn(createActor('foo'))
       })
