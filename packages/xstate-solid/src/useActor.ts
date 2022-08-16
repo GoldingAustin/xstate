@@ -27,15 +27,14 @@ export function defaultGetSnapshot<TEmitted>(
     : {};
 }
 
-type ActorReturn<T> = T;
 export function useActor<TActor extends ActorRef<any, any>>(
   actorRef: Accessor<TActor> | TActor,
   getSnapshot?: (actor: TActor) => EmittedFromActorRef<TActor>
-): { state: ActorReturn<EmittedFromActorRef<TActor>>; send: TActor['send'] };
+): { state: EmittedFromActorRef<TActor>; send: TActor['send'] };
 export function useActor<TEvent extends EventObject, TEmitted>(
   actorRef: Accessor<ActorRef<TEvent, TEmitted>> | ActorRef<TEvent, TEmitted>,
   getSnapshot?: (actor: ActorRef<TEvent, TEmitted>) => TEmitted
-): { state: ActorReturn<TEmitted>; send: Sender<TEvent> };
+): { state: TEmitted; send: Sender<TEvent> };
 export function useActor(
   actorRef:
     | Accessor<ActorRef<EventObject, unknown>>
@@ -43,7 +42,7 @@ export function useActor(
   getSnapshot: (
     actor: ActorRef<EventObject, unknown>
   ) => unknown = defaultGetSnapshot
-): { state: ActorReturn<unknown>; send: Sender<EventObject> } {
+): { state: unknown; send: Sender<EventObject> } {
   const actorMemo = createMemo<ActorRef<EventObject, unknown>>(
     typeof actorRef === 'function' ? actorRef : () => actorRef
   );
