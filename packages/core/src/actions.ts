@@ -40,7 +40,10 @@ import {
   Cast,
   EventFrom,
   AnyActorRef,
-  PredictableActionArgumentsExec
+  PredictableActionArgumentsExec,
+  SetAction,
+  Setter,
+  SetMeta
 } from './types';
 import * as actionTypes from './actionTypes';
 import {
@@ -472,6 +475,15 @@ export const assign = <TContext, TEvent extends EventObject = EventObject>(
   };
 };
 
+export const set = <TContext, TEvent extends EventObject = EventObject>(
+  assignment: Setter<TContext, TEvent>
+): SetAction<TContext, TEvent> => {
+  return {
+    type: actionTypes.set,
+    assignment
+  };
+};
+
 export function isActionObject<TContext, TEvent extends EventObject>(
   action: Action<TContext, TEvent>
 ): action is ActionObject<TContext, TEvent> {
@@ -783,6 +795,21 @@ export function resolveActions<TContext, TEvent extends EventObject>(
           _event,
           [actionObject as AssignAction<TContext, TEvent>],
           !predictableExec ? currentState : undefined
+        );
+        preservedContexts?.push(updatedContext);
+        break;
+      }
+      case actionTypes.set: {
+        const setAction = (actionObject as SetAction<TContext, TEvent>)!;
+        const meta: SetMeta<TContext, TEvent> = {
+          state: currentState,
+          action: setAction,
+          _event
+        };
+        updatedContext = setAction.assignment(
+          updatedContext,
+          _event.data,
+          meta
         );
         preservedContexts?.push(updatedContext);
         break;

@@ -99,6 +99,12 @@ export interface AssignMeta<TContext, TEvent extends EventObject> {
   _event: SCXML.Event<TEvent>;
 }
 
+export interface SetMeta<TContext, TEvent extends EventObject> {
+  state?: State<TContext, TEvent>;
+  action: SetAction<TContext, TEvent>;
+  _event: SCXML.Event<TEvent>;
+}
+
 export type ActionFunction<
   TContext,
   TEvent extends EventObject,
@@ -1157,6 +1163,7 @@ export enum ActionTypes {
   Cancel = 'xstate.cancel',
   NullEvent = '',
   Assign = 'xstate.assign',
+  Set = 'xstate.set',
   After = 'xstate.after',
   DoneState = 'done.state',
   DoneInvoke = 'done.invoke',
@@ -1324,6 +1331,12 @@ export interface CancelAction extends ActionObject<any, any> {
   sendId: string | number;
 }
 
+export type Setter<TContext, TEvent extends EventObject> = (
+  context: TContext,
+  event: TEvent,
+  meta: SetMeta<TContext, TEvent>
+) => TContext;
+
 export type Assigner<TContext, TEvent extends EventObject> = (
   context: TContext,
   event: TEvent,
@@ -1369,6 +1382,12 @@ export interface AssignAction<TContext, TEvent extends EventObject>
   extends ActionObject<TContext, TEvent> {
   type: ActionTypes.Assign;
   assignment: Assigner<TContext, TEvent> | PropertyAssigner<TContext, TEvent>;
+}
+
+export interface SetAction<TContext, TEvent extends EventObject>
+  extends ActionObject<TContext, TEvent> {
+  type: ActionTypes.Set;
+  assignment: Setter<TContext, TEvent>;
 }
 
 export interface PureAction<TContext, TEvent extends EventObject>
